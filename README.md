@@ -26,7 +26,7 @@
 **作为 Agent Skill**（WorkBuddy / Claude Code 等）：
 
 ```bash
-git clone git@github.com:splexuan/codex-iamge-skill.git ~/.workbuddy/skills/codex-image
+git clone git@github.com:splexuan/codex-image-skill.git ~/.workbuddy/skills/codex-image
 ```
 
 **只用脚本**（零依赖，Python 3.9+）：
@@ -54,12 +54,24 @@ python scripts/codex_image.py --prompt "..." --out shots/ --n 3
 python scripts/codex_image.py --prompt "..." --out x.png --dry-run
 ```
 
+### 出图数量：默认 1 张
+
+`--n` 的默认值是 `1`，**Agent 调用时也应保持这个默认**：用户没有明确说要几张，就只出一张。
+
+每次生成都会消耗你自己 ChatGPT / Codex 套餐的额度，多出的图无法撤回。所以：
+
+- 用户说"画一张"、"出个图" → 就是 1 张，不要自行追加变体、不要"多给几个选择让用户挑"。
+- 确实觉得多个机位/构图有价值时，**先问一句**，得到允许再调 `--n 2`，不要先出图后解释。
+- 用户明确要多张时才用 `--n`，且按用户给的数字来。
+
+`SKILL.md` 中「出图数量」一节是给 Agent 的硬性规则，本文件此处为其人类可读版本。
+
 ### 参数
 
 | 参数 | 说明 |
 |---|---|
 | `--prompt` | 提示词，必填 |
-| `--out` | 输出路径；`--n > 1` 时当目录用，自动命名 `image-1.png` |
+| `--out` | 输出路径；`--n > 1` 时当目录用，自动命名 `image-1.png`；单图时若扩展名与 `--output-format` 不符会自动纠正 |
 | `--channel` | `responses`（默认）或 `images` |
 | `--image` | 参考图路径，可重复传入 |
 | `--n` | 生成张数，1–10（默认 1） |
@@ -84,6 +96,7 @@ python scripts/codex_image.py --prompt "..." --out x.png --dry-run
 | 额度 / 频率受限 | ChatGPT 套餐用量用尽 | 换账号或等额度恢复 |
 | 响应中断（`IncompleteRead`） | SSE 长连接被网络或代理掐断 | 已内置容错 + 自动重试 3 次；持续失败则加 `--proxy` |
 | 连不上 `chatgpt.com` | 需要代理 | 加 `--proxy` |
+| 生成的图某些软件打不开 / 后缀与格式不符 | 单图时 `--out` 的扩展名与 `--output-format` 不一致（如 `--out x.png` 配 `--output-format jpeg`） | 脚本会自动纠正扩展名（`x.png` → `x.jpg`）；旧版脚本产出的文件手动改名即可 |
 
 ## 安全与合规
 

@@ -529,7 +529,14 @@ def main() -> None:
     if args.n > 1:
         outputs = [p.with_suffix(f".{ext}") for p in resolve_outputs(args.out, args.n)]
     else:
-        outputs = [Path(args.out)]
+        out_path = Path(args.out)
+        # 单图时若扩展名与 --output-format 不一致（如 out.png + jpeg），
+        # 文件内容其实是 jpeg，扩展名必须跟着改，否则部分查看器打不开。
+        if out_path.suffix:
+            want = {"jpeg": {"jpg", "jpeg"}}.get(ext, {ext})
+            if out_path.suffix.lower().lstrip(".") not in want:
+                out_path = out_path.with_suffix(f".{'jpg' if ext == 'jpeg' else ext}")
+        outputs = [out_path]
 
     saved: list[Path] = []
     for index in range(args.n):

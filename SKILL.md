@@ -12,6 +12,16 @@ agent_created: true
 
 这不是 OpenAI 官方推荐的集成方式——它复用的是 ChatGPT 客户端内部接口，可能随官方更新而变更、失效，或受账号与用量规则限制。仅适合个人本机使用，不要用于生产、团队部署或对外服务。
 
+## 出图数量（硬性规则，优先级最高）
+
+**默认只生成 1 张。** 用户消息里没有明确出现"几张 / 多来几个版本 / 出一版对比 / 给我挑选 / n 张"这类表述时，一律 `--n 1`，出一张就直接交付。
+
+- "生成/画一张 XX"、"帮我出个图" → **1 张**。不许自行追加变体、不许"多给几个选择让用户挑"。
+- 用户明确要多个版本 → 按用户给的数字；没给数字时最多 2 张，并在交付说明里点明张数。
+- 每一次请求都在消耗**用户自己的 ChatGPT/Codex 套餐额度**，多出的那张就是白花的钱，无法撤回。
+- 如果确实觉得多个机位/构图对用户有帮助，**先把方案说一句问一下**，得到允许再出第二张；不要先出图、后解释。
+- 本文件后面的 `--n 3` 示例只用于演示参数存在，**不构成默认行为**。
+
 ## 使用前提
 
 1. 本机已安装 Codex CLI
@@ -33,7 +43,7 @@ python scripts/codex_image.py --prompt "改成赛博朋克夜景" --image in.png
 # 指定尺寸与质量、走 Image 直连通道
 python scripts/codex_image.py --prompt "..." --out x.png --channel images --size 1024x1024 --quality high
 
-# 批量出 3 张（--out 此时当作输出目录）
+# 批量出 3 张（仅当用户明确要求多张时才用；--out 此时当作输出目录）
 python scripts/codex_image.py --prompt "..." --out shots/ --n 3
 
 # 只查看将要发出的请求体，不联网
@@ -47,7 +57,7 @@ python scripts/codex_image.py --prompt "..." --out x.png --dry-run
 | 通道 | 参数 | 端点 | 何时用 |
 |---|---|---|---|
 | Codex Responses | `--channel responses`（默认） | `/backend-api/codex/responses` | 首选。SSE 流式，工具调用式出图，对复杂/长提示词更稳 |
-| Codex Image 直连 | `--channel images` | `/backend-api/codex/images/...` | 需要 `n>1` 一次性多图，或 responses 通道异常时备选 |
+| Codex Image 直连 | `--channel images` | `/backend-api/codex/images/...` | 用户明确要多图（`n>1`）时一次性出；或 responses 通道异常时备选 |
 
 两个通道都支持 `--size`、`--quality`、`--output-format`、参考图与编辑。
 `responses` 通道的主模型（`--main-model`，默认 `gpt-5.6-luna`）只负责调度，不参与画图；真正画图的是 `--model`（默认 `gpt-image-2`）。
@@ -81,6 +91,7 @@ python scripts/codex_image.py --prompt "..." --out x.png --dry-run
 | 网络超时 / 连不上 `chatgpt.com` | 需要代理 | 加 `--proxy` |
 | 响应中断（`IncompleteRead` / 流被截断） | SSE 长连接被网络或代理掐断 | 已内置容错：保留已收数据 + 自动重试 3 次。持续失败则换 `--proxy` 出口 |
 | 生成耗时过长 | 高分辨率或高质量参数导致 | 单次请求超时 600s，可下调 `--size` / `--quality` |
+| 生成的图某些软件打不开 / 后缀与格式不符 | 单图时 `--out` 的扩展名与 `--output-format` 不一致 | 脚本会自动纠正扩展名（如 `out.png` + `jpeg` → `out.jpg`）；若手上是旧版脚本产出的文件，手动改名即可 |
 
 ## 何时不要用这个技能
 
